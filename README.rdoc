@@ -1,0 +1,42 @@
+= coop_cli
+
+Author:: Warwick Poole (wpoole@gmail.com)
+https://github.com/warwickp/coop_cli
+
+A simple cli tool for interacting with Co-op (https://coopapp.com) the group collaboration tool from Harvest (http://www.getharvest.com).
+
+== License
+
+MIT bitches.
+
+== Install
+
+    gem install coop_cli
+
+
+== Usage
+
+First, set up your configuration file at ~/.coop_cli (set to chmod 600 on creation) to contain your username, password, group ID and optional (http://coopapp.com/api/statuses) Cobot Key
+
+    coop_cli -u me@me.com -p happypants -g 1234 -k 1234567899003030 initconfig
+
+Alternatively you can specify/override these at runtime like a pirate.
+
+Now to post to Co-op as your user:
+
+    coop_cli post "My horse is thirsty @bob"
+
+Or, pirately:
+
+    coop_cli -u me@me.com -p happypants -g 12345 post "Hey @tim, may I have this dance?"
+
+Now to post to Co-op as Cobot
+
+    coop_cli post -c "Building on fire. Everyone panic. Thanks."
+
+Or, pirately:
+
+    coop_cli -k 12344598989723387 post -c "Sharks have escaped. Self destruction in 5 minutes."
+
+:include:coop_cli.rdoc
+

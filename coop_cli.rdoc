@@ -1,0 +1,5 @@
+= coop_cli
+
+Generate this with
+    coop_cli rdoc
+After you have described your command line interface

@@ -1,0 +1,106 @@
+#!/usr/bin/env ruby
+# 1.9 adds realpath to resolve symlinks; 1.8 doesn't
+# have this method, so we add it so we get resolved symlinks
+# and compatibility
+unless File.respond_to? :realpath
+  class File #:nodoc:
+    def self.realpath path
+      return realpath(File.readlink(path)) if symlink?(path)
+      path
+    end
+  end
+end
+$: << File.expand_path(File.dirname(File.realpath(__FILE__)) + '/../lib')
+require 'rubygems'
+require 'gli'
+require 'coop_cli'
+
+include GLI
+
+program_desc 'A cli interface to Co-op, the team collaboration tool from Harvest (https://coopapp.com)'
+
+version CoopCli::VERSION
+
+config_file '.coop_cli'
+
+### global options will override config file values if both are specified
+desc 'Use specified URL for Co-op, allows local testing'
+default_value 'https://coopapp.com'
+flag [:b,:baseurl]
+
+desc 'The numerical ID of your Co-op group (eg: 1234)'
+flag [:g,:group]
+
+desc 'Your Co-op username (eg: me@example.com)'
+flag [:u,:username]
+
+desc 'Your Co-op password (eg: horseradishburns)'
+flag [:p,:password]
+
+desc 'Key to use when posting as Cobot (eg: 12345678910111213)'
+flag [:k,:key]
+
+### method options
+desc "Post a status or a note to a Co-op group (eg: coop_cli post 'eating a cookie, delicious' or: coop_cli post -c '@all meeting at 10am')"
+arg_name "'status to post to coop'"
+command :post do |c|
+  c.desc 'Post a note as Cobot instead of your own Co-op user (requires a key)'
+  c.switch [:c,:cobot]
+
+  c.action do |global_options,options,args|
+
+    #====validations
+    raise("You need to specify a status to post. (eg: coop_cli post 'whats for dinner?')") if args.empty?
+    raise("You need to specify a SINGLE status to post. (eg: coop_cli post 'whats for dinner?')") if args.size > 1
+    raise("There is no group for me to use, try using initconfig to set up a config file first") unless global_options[:g]
+    if options[:c]
+      raise("There is no key for me to use") unless global_options[:k] 
+    end
+    unless options[:c]
+      raise("There is no username for me to use") unless global_options[:u] 
+      raise("There is no password for me to use") unless global_options[:p]  
+    end
+    #==END==validations
+    
+    #====posting to co-op
+    post_to_coop = CoopCli::Coop.new(global_options[:b])
+    if options[:c] #using a key, no basic auth
+     post_to_coop.post_as_cobot("/groups/#{global_options[:g]}/statuses",args[0],global_options[:k])
+    else
+     post_to_coop.basic_auth(global_options[:u],global_options[:p])
+     post_to_coop.post_as_user("/groups/#{global_options[:g]}/statuses",args[0])
+    end
+    #==END==posting to co-op
+  end
+end
+
+desc 'List statuses and notes from a Co-op group'
+arg_name 'Describe arguments to list here'
+command :list do |c|
+  c.action do |global_options,options,args|
+  end
+end
+
+
+pre do |global,command,options,args|
+  # Pre logic here
+  # Return true to proceed; false to abort and not call the
+  # chosen command
+  # Use skips_pre before a command to skip this block
+  # on that command only
+  true
+end
+
+post do |global,command,options,args|
+  # Post logic here
+  # Use skips_post before a command to skip this
+  # block on that command only
+end
+
+on_error do |exception|
+  # Error logic here
+  # return false to skip default error handling
+  true
+end
+
+exit GLI.run(ARGV)
